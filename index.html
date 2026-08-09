@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kilzz — Temp Mail</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg:#0b0b0c;
+    --panel:#141416;
+    --line:#2a2a2e;
+    --ink:#f2f2f0;
+    --ink-dim:#8c8c92;
+    --accent:#f2f2f0;
+    --stamp:#c9c9c4;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Space Grotesk', sans-serif;
+    min-height:100vh;
+    padding:20px 14px 60px;
+  }
+
+  .wrap{max-width:640px; margin:0 auto;}
+
+  /* ===== Header ===== */
+  header{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    padding-bottom:18px; margin-bottom:22px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand h1{
+    font-size:22px; font-weight:700; letter-spacing:-0.02em;
+  }
+  .brand p{
+    font-size:12px; color:var(--ink-dim); margin-top:2px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .stamp{
+    width:44px; height:44px; border:1.5px dashed var(--stamp);
+    display:flex; align-items:center; justify-content:center;
+    font-size:9px; color:var(--stamp); font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.05em; text-align:center; line-height:1.3;
+    transform:rotate(3deg); flex-shrink:0;
+  }
+
+  /* ===== Address card ===== */
+  .address-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px;
+    margin-bottom:16px;
+  }
+  .address-label{
+    font-size:10px; text-transform:uppercase; letter-spacing:0.12em;
+    color:var(--ink-dim); margin-bottom:10px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .address-row{
+    display:flex; align-items:center; gap:8px;
+  }
+  .address-text{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:15px;
+    flex:1;
+    word-break:break-all;
+    padding:10px 12px;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:8px;
+  }
+  button{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:500;
+    cursor:pointer;
+    border:none;
+    border-radius:8px;
+    transition:opacity .15s ease, transform .1s ease;
+  }
+  button:active{ transform:scale(0.96); }
+
+  .icon-btn{
+    width:42px; height:42px; flex-shrink:0;
+    background:var(--ink); color:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+  }
+  .icon-btn.ghost{
+    background:transparent; color:var(--ink-dim); border:1px solid var(--line);
+  }
+
+  .actions-row{
+    display:flex; gap:8px; margin-top:12px;
+  }
+  .actions-row button{
+    flex:1;
+    padding:10px;
+    font-size:13px;
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--ink);
+  }
+  .actions-row button:hover{ border-color:var(--ink-dim); }
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:var(--bg);
+    padding:10px 18px; border-radius:100px;
+    font-size:13px; font-weight:500;
+    opacity:0; pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    z-index:50;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ===== Inbox ===== */
+  .inbox-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin:26px 0 12px;
+  }
+  .inbox-head h2{
+    font-size:13px; text-transform:uppercase; letter-spacing:0.1em;
+    color:var(--ink-dim); font-family:'IBM Plex Mono', monospace;
+  }
+  .live-dot{
+    width:7px; height:7px; border-radius:50%; background:#4ade80;
+    display:inline-block; margin-right:6px;
+    animation:pulse 1.6s infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ opacity:1; } 50%{ opacity:.35; }
+  }
+  .status{
+    font-size:11px; color:var(--ink-dim); font-family:'IBM Plex Mono', monospace;
+    display:flex; align-items:center;
+  }
+
+  .empty-state{
+    text-align:center; padding:50px 20px;
+    color:var(--ink-dim);
+  }
+  .empty-state .env{
+    font-size:34px; margin-bottom:12px; opacity:.5;
+  }
+  .empty-state p{ font-size:13px; line-height:1.6; }
+
+  .mail-item{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:10px;
+    cursor:pointer;
+    transition:border-color .15s ease;
+    animation:slideIn .3s ease;
+  }
+  @keyframes slideIn{
+    from{ opacity:0; transform:translateY(-6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .mail-item:active{ border-color:var(--ink-dim); }
+  .mail-top{
+    display:flex; justify-content:space-between; gap:10px;
+    margin-bottom:4px;
+  }
+  .mail-from{
+    font-size:13px; font-weight:500;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .mail-time{
+    font-size:11px; color:var(--ink-dim); flex-shrink:0;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .mail-subject{
+    font-size:14px; color:var(--ink-dim);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+
+  /* ===== Modal ===== */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.6);
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+    z-index:100;
+  }
+  .modal-overlay.show{ opacity:1; pointer-events:auto; }
+  .modal{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:20px 20px 0 0;
+    width:100%; max-width:640px;
+    max-height:80vh;
+    padding:22px 18px 30px;
+    transform:translateY(100%);
+    transition:transform .25s ease;
+    overflow-y:auto;
+  }
+  .modal-overlay.show .modal{ transform:translateY(0); }
+  .modal-close{
+    width:32px; height:32px;
+    background:transparent; border:1px solid var(--line); color:var(--ink-dim);
+    border-radius:50%; font-size:14px; margin-left:auto; display:block;
+  }
+  .modal h3{ font-size:17px; margin-top:14px; line-height:1.4; }
+  .modal .meta{
+    font-size:12px; color:var(--ink-dim); margin-top:8px;
+    font-family:'IBM Plex Mono', monospace;
+    padding-bottom:14px; border-bottom:1px solid var(--line);
+  }
+  .modal .body-text{
+    font-size:14px; line-height:1.7; margin-top:16px;
+    white-space:pre-wrap; word-break:break-word;
+  }
+
+  .view-toggle{
+    display:flex; gap:6px; margin-top:14px;
+  }
+  .view-toggle button{
+    padding:7px 14px; font-size:12px;
+    background:transparent; border:1px solid var(--line); color:var(--ink-dim);
+  }
+  .view-toggle button.active{
+    background:var(--ink); color:var(--bg); border-color:var(--ink);
+  }
+  #modalHtmlFrame{
+    width:100%; min-height:300px; border:1px solid var(--line);
+    border-radius:8px; margin-top:12px; background:#fff;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Kilzz - TempMail.</h1>
+      <p>alamat sekali pakai</p>
+    </div>
+    <div class="stamp">TEMP<br>MAIL</div>
+  </header>
+
+  <div class="address-card">
+    <div class="address-label">Alamat aktif</div>
+    <div class="address-row">
+      <div class="address-text" id="addressText">memuat…</div>
+      <button class="icon-btn" id="copyBtn" title="Salin">⧉</button>
+    </div>
+    <div class="actions-row">
+      <button id="newAddrBtn">↻ Alamat baru</button>
+      <button id="refreshBtn">⬇ Cek sekarang</button>
+    </div>
+  </div>
+
+  <div class="inbox-head">
+    <h2>Kotak masuk</h2>
+    <div class="status"><span class="live-dot"></span><span id="statusText">Active...</span></div>
+  </div>
+
+  <div id="inboxList">
+    <div class="empty-state">
+      <div class="env">✉</div>
+      <p>Belum ada surat masuk.<br>Kirim email ke alamat di atas, akan muncul otomatis di sini.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Disalin</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <h3 id="modalSubject"></h3>
+    <div class="meta" id="modalMeta"></div>
+    <div class="view-toggle" id="viewToggle" style="display:none;">
+      <button id="btnViewHtml" class="active">HTML</button>
+      <button id="btnViewText">Text</button>
+    </div>
+    <div class="body-text" id="modalBody"></div>
+    <iframe id="modalHtmlFrame" sandbox="allow-same-origin" style="display:none;"></iframe>
+  </div>
+</div>
+
+<script>
+  // ====== KONFIGURASI — ganti sesuai punya kamu ======
+  const API_BASE = "https://tempmail-api.culuncuni.workers.dev";
+  const DOMAIN = "arras-mail.my.id";
+  const POLL_INTERVAL = 500; // 
+  // =====================================================
+
+  const addressText = document.getElementById('addressText');
+  const inboxList = document.getElementById('inboxList');
+  const statusText = document.getElementById('statusText');
+  const toast = document.getElementById('toast');
+
+  let currentAddress = localStorage.getItem('kotak_address') || generateAddress();
+  let knownIds = new Set();
+  let pollTimer = null;
+  let emailCache = {}; // id -> objek email, buat lookup pas klik & smart render
+
+  function generateAddress(){
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let rand = '';
+    for(let i=0;i<8;i++) rand += chars[Math.floor(Math.random()*chars.length)];
+    return `${rand}@${DOMAIN}`;
+  }
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(()=> toast.classList.remove('show'), 1600);
+  }
+
+  function timeAgo(iso){
+    const diff = Math.floor((Date.now() - new Date(iso).getTime())/1000);
+    if(diff < 60) return 'baru saja';
+    if(diff < 3600) return Math.floor(diff/60)+'m lalu';
+    if(diff < 86400) return Math.floor(diff/3600)+'j lalu';
+    return Math.floor(diff/86400)+'h lalu';
+  }
+
+  function mailItemHtml(mail){
+    return `
+      <div class="mail-item" data-id="${mail.id}">
+        <div class="mail-top">
+          <div class="mail-from">${escapeHtml(formatSender(mail.from))}</div>
+          <div class="mail-time">${timeAgo(mail.receivedAt)}</div>
+        </div>
+        <div class="mail-subject">${escapeHtml(mail.subject || '(tanpa subjek)')}</div>
+      </div>`;
+  }
+
+  function attachClickHandler(el){
+    el.addEventListener('click', ()=>{
+      const mail = emailCache[el.dataset.id];
+      if(mail) openModal(mail);
+    });
+  }
+
+  function renderInbox(emails){
+    emails.forEach(mail => emailCache[mail.id] = mail);
+
+    if(!emails || emails.length === 0){
+      inboxList.innerHTML = `
+        <div class="empty-state">
+          <div class="env">✉</div>
+          <p>Belum ada surat masuk.<br>Kirim email ke alamat di atas, akan muncul otomatis di sini.</p>
+        </div>`;
+      knownIds = new Set();
+      return;
+    }
+
+    const incomingIds = emails.map(m => m.id);
+    const newOnes = emails.filter(m => !knownIds.has(m.id));
+
+    if(knownIds.size === 0){
+      inboxList.innerHTML = emails.map(mailItemHtml).join('');
+      document.querySelectorAll('.mail-item').forEach(attachClickHandler);
+    } else if(newOnes.length > 0){
+      newOnes.slice().reverse().forEach(mail => {
+        const div = document.createElement('div');
+        div.innerHTML = mailItemHtml(mail);
+        const el = div.firstElementChild;
+        attachClickHandler(el);
+        inboxList.insertBefore(el, inboxList.firstChild);
+      });
+    }
+
+    document.querySelectorAll('.mail-item').forEach(el=>{
+      const mail = emailCache[el.dataset.id];
+      if(mail){
+        const timeEl = el.querySelector('.mail-time');
+        if(timeEl) timeEl.textContent = timeAgo(mail.receivedAt);
+      }
+    });
+
+    knownIds = new Set(incomingIds);
+  }
+
+  function formatSender(from){
+    if(!from) return '(tidak diketahui)';
+    const parts = from.split('@');
+    const domain = parts[parts.length - 1];
+    if(from.length > 40 || from.includes('bounces')){
+      return `via ${domain}`;
+    }
+    return from;
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+  }
+
+  function openModal(mail){
+    document.getElementById('modalSubject').textContent = mail.subject || '(tanpa subjek)';
+    document.getElementById('modalMeta').textContent = `Dari: ${formatSender(mail.from)}  •  ${new Date(mail.receivedAt).toLocaleString('id-ID')}`;
+
+    const toggle = document.getElementById('viewToggle');
+    const bodyEl = document.getElementById('modalBody');
+    const frameEl = document.getElementById('modalHtmlFrame');
+    const btnHtml = document.getElementById('btnViewHtml');
+    const btnText = document.getElementById('btnViewText');
+
+    const hasHtml = mail.bodyHtml && mail.bodyHtml.trim().length > 0;
+
+    if(hasHtml){
+      toggle.style.display = 'flex';
+      // pakai srcdoc biar sandbox aktif, gak eksekusi script/nyuri cookie
+      frameEl.srcdoc = mail.bodyHtml;
+      frameEl.style.display = 'block';
+      bodyEl.style.display = 'none';
+      btnHtml.classList.add('active');
+      btnText.classList.remove('active');
+
+      btnHtml.onclick = ()=>{
+        frameEl.style.display = 'block';
+        bodyEl.style.display = 'none';
+        btnHtml.classList.add('active');
+        btnText.classList.remove('active');
+      };
+      btnText.onclick = ()=>{
+        bodyEl.textContent = mail.body || '(tidak ada versi text)';
+        bodyEl.style.display = 'block';
+        frameEl.style.display = 'none';
+        btnText.classList.add('active');
+        btnHtml.classList.remove('active');
+      };
+    }else{
+      toggle.style.display = 'none';
+      frameEl.style.display = 'none';
+      bodyEl.style.display = 'block';
+      bodyEl.textContent = mail.body || '(tidak ada isi)';
+    }
+
+    document.getElementById('modalOverlay').classList.add('show');
+  }
+
+  document.getElementById('modalClose').addEventListener('click', ()=>{
+    document.getElementById('modalOverlay').classList.remove('show');
+  });
+  document.getElementById('modalOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'modalOverlay') e.currentTarget.classList.remove('show');
+  });
+
+  async function fetchInbox(silent){
+    if(!silent) statusText.textContent = 'memeriksa…';
+    try{
+      const start = Date.now();
+      const res = await fetch(`${API_BASE}/inbox?address=${encodeURIComponent(currentAddress)}`);
+      const data = await res.json();
+      renderInbox(data.emails || []);
+      const elapsed = Date.now() - start;
+      const wait = Math.max(0, 2000 - elapsed);
+      setTimeout(()=>{ statusText.textContent = 'Active...'; }, wait);
+    }catch(err){
+      statusText.textContent = 'gagal terhubung';
+    }
+  }
+
+  function startPolling(){
+    if(pollTimer) clearInterval(pollTimer);
+    fetchInbox(true);
+    pollTimer = setInterval(()=> fetchInbox(true), POLL_INTERVAL);
+  }
+
+  function setAddress(addr){
+    currentAddress = addr;
+    localStorage.setItem('kotak_address', addr);
+    addressText.textContent = addr;
+    startPolling();
+  }
+
+  document.getElementById('copyBtn').addEventListener('click', ()=>{
+    navigator.clipboard.writeText(currentAddress).then(()=> showToast('Alamat disalin'));
+  });
+
+  document.getElementById('newAddrBtn').addEventListener('click', ()=>{
+    setAddress(generateAddress());
+    showToast('Alamat baru dibuat');
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', ()=>{
+    fetchInbox(false);
+  });
+
+  // init
+  setAddress(currentAddress);
+</script>
+
+</body>
+</html>
